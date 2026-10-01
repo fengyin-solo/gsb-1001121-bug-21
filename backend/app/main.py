@@ -5,11 +5,13 @@
 """
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.routers import ROUTERS
+from app.services.handover import HandoverError
 from app.store import store
 
 app = FastAPI(title="市政道路桥梁养护管理平台", version="1.0.0")
@@ -21,6 +23,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(HandoverError)
+async def handover_error_handler(_request: Request, exc: HandoverError) -> JSONResponse:
+    """交接域异常统一成 {code, message}：旧身份 401、并发冲突 409 都靠 code 区分。"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message},
+    )
 
 for module in ROUTERS:
     app.include_router(module.router)

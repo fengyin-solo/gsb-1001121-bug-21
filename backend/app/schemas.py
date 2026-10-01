@@ -28,6 +28,34 @@ class EntryPayload(BaseModel):
     remark: str | None = None
 
 
+class LoginPayload(BaseModel):
+    """登录入参：身份快照以班组 + 当前班次值班负责人为准。"""
+
+    crew_id: int
+    leader: str = Field(min_length=1, description="当前班次值班负责人姓名")
+
+
+class DispatchPayload(BaseModel):
+    """巡查派单入参：指定本班组驾驶员与车辆。"""
+
+    driver_id: int
+    vehicle_id: int
+    issue: str | None = None
+    measure: str | None = None
+
+
+class HandoverPayload(BaseModel):
+    """交接签字入参：接班负责人必须签字，expected_version 用于并发拦截。"""
+
+    to_leader: str = Field(min_length=1, description="接班负责人签字")
+    label: str | None = Field(default=None, description="新班次名称，缺省按白班/夜班轮换")
+    remark: str | None = None
+    driver_id: int | None = Field(default=None, description="在途车辆任务统一转给哪位驾驶员")
+    driver_map: dict[str, Any] = Field(default_factory=dict, description="按车辆任务 id 指定接收驾驶员")
+    expected_version: int | None = Field(default=None, description="提交时班组身份版本，防止并发覆盖")
+    signed_at: str | None = Field(default=None, description="签字时刻，缺省取服务器当前时间")
+
+
 
 class RoadSectionEntry(BaseModel):
     """管养路段明细结构。"""
