@@ -11,7 +11,13 @@
     <main class="app-main">
       <header class="app-head">
         <span class="head-desc">覆盖道路巡查、桥隧定检、路面病害、交安设施、绿化管养、除雪防汛及养护工程管理的市政道桥全要素养护后台。</span>
-        <span class="head-user">当前值班：{{ store.operator }} · {{ store.shiftLabel }}</span>
+        <span class="head-user">
+          <template v-if="store.isLoggedIn">
+            当前值班：{{ store.name }}（{{ store.role }}） · {{ store.shiftLabel }}
+            <button class="head-logout" type="button" @click="logout">注销</button>
+          </template>
+          <template v-else>未登录 · <RouterLink to="/handover" class="nav-item-inline">前往登录</RouterLink></template>
+        </span>
       </header>
       <RouterView />
     </main>
@@ -20,8 +26,14 @@
 
 <script setup lang="ts">
 import { useSessionStore } from '@/stores/session'
+import { requestJson } from '@/api/client'
 
 const store = useSessionStore()
 
-const navItems = [{ label: "运营概览", path: "/" }, { label: "路段管理", path: "/road_section" }, { label: "日常巡查", path: "/patrol" }, { label: "路面病害", path: "/pavement" }, { label: "桥梁定检", path: "/bridge" }, { label: "桥梁档案", path: "/bridge_info" }, { label: "隧道管养", path: "/tunnel" }, { label: "交安设施", path: "/traffic_facility" }, { label: "排水设施", path: "/drainage" }, { label: "绿化管养", path: "/green" }, { label: "路灯照明", path: "/lighting" }, { label: "除雪防滑", path: "/winter" }, { label: "防汛应急", path: "/flood" }, { label: "边坡防护", path: "/slope" }, { label: "伸缩缝管理", path: "/expansion" }, { label: "支座维护", path: "/bearing" }, { label: "养护工程", path: "/project" }, { label: "养护车辆", path: "/vehicle" }, { label: "养护材料", path: "/material" }]
+async function logout() {
+  await requestJson('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+  store.clear()
+}
+
+const navItems = [{ label: "运营概览", path: "/" }, { label: "班组交接", path: "/handover" }, { label: "路段管理", path: "/road_section" }, { label: "日常巡查", path: "/patrol" }, { label: "路面病害", path: "/pavement" }, { label: "桥梁定检", path: "/bridge" }, { label: "桥梁档案", path: "/bridge_info" }, { label: "隧道管养", path: "/tunnel" }, { label: "交安设施", path: "/traffic_facility" }, { label: "排水设施", path: "/drainage" }, { label: "绿化管养", path: "/green" }, { label: "路灯照明", path: "/lighting" }, { label: "除雪防滑", path: "/winter" }, { label: "防汛应急", path: "/flood" }, { label: "边坡防护", path: "/slope" }, { label: "伸缩缝管理", path: "/expansion" }, { label: "支座维护", path: "/bearing" }, { label: "养护工程", path: "/project" }, { label: "养护车辆", path: "/vehicle" }, { label: "养护材料", path: "/material" }]
 </script>

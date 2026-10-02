@@ -5,14 +5,30 @@
 """
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import ROUTERS
+from app.services.handover import handover_service
 from app.store import store
 
-app = FastAPI(title="市政道路桥梁养护管理平台", version="1.0.0")
+logger = logging.getLogger("app.boot")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # 幂等：补齐身份/班次骨架，并把存量重叠班次迁移拆分。
+    report = handover_service.bootstrap_if_needed()
+    if report:
+        logger.info("班组交接数据引导完成：%s", report)
+    yield
+
+
+app = FastAPI(title="市政道路桥梁养护管理平台", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

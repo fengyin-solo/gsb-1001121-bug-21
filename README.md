@@ -74,3 +74,25 @@ npm run dev
   `backend/app/routers/<模块>.py`，业务规则在 `backend/app/services/<模块>.py`。
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
+
+## 班组交接（巡查）
+
+巡查在班组交接期间的咬合规则集中在 `app/services/handover.py` 与
+`app/services/identity.py`：
+
+- **身份快照**：登录签发令牌，令牌缓存登录时身份（人员/班组/角色）；交接签字原子
+  失效交班班长与旧司机的会话，旧身份继续派单返回 401/409。
+- **任务责任**：在途任务随交接转到新班次并保留 `transfer_chain`；已闭环任务按原
+  签字班次（`signed_shift_id`）保留，不转派。列表与详情共用同一快照口径。
+- **接口鉴权**：写操作要求 `Authorization: Bearer <token>`，派单只允许当前班次
+  班长/值班员；并发交接靠 `expected_shift_id` 乐观锁 + 全库事务，只有一个版本
+  成为当前班次（冲突返回 409）。
+- **原子回写**：一次交接在单个 `store.transaction()` 内完成班次切换、任务转派、
+  巡查详情回写、司机通知、班组待办、审计事件与鉴权缓存失效，任一失败整体回滚。
+- **存量迁移**：首次启动幂等执行，重叠的旧班次按交接签字时刻裁剪拆分，在途任务
+  只归最后签字版本，并写 `migration.shift_split` 审计。
+- 前端「班组交接」页（`/handover`）提供登录、签字、车辆任务看板（按当前责任
+  去重，修掉旧身份重复显示）、待办、通知与审计查看。
+
+后端回归测试：`pip install -r requirements-dev.txt && pytest backend/tests`。
+

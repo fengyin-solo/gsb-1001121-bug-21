@@ -28,6 +28,41 @@ class EntryPayload(BaseModel):
     remark: str | None = None
 
 
+class LoginPayload(BaseModel):
+    """登录换票：演示环境不做密码校验，只按工号签发身份令牌。"""
+
+    user_code: str
+    password: str | None = None
+
+
+class LoginResult(BaseModel):
+    token: str
+    user: dict[str, Any]
+    shift: dict[str, Any] | None = None
+    expires_at: str
+
+
+class HandoverPayload(BaseModel):
+    """班组交接签字：必须带上当前班次版本，防止并发交接互相覆盖。"""
+
+    crew: str
+    expected_shift_id: int
+    out_foreman: str
+    in_foreman: str
+    out_driver: str | None = None
+    in_driver: str
+    in_vehicle_plate: str
+    note: str | None = None
+
+
+class DispatchPayload(BaseModel):
+    """派单：必须由当前班次身份发起，车辆/司机缺省取当前班次快照。"""
+
+    driver: str | None = None
+    vehicle_plate: str | None = None
+    note: str | None = None
+
+
 
 class RoadSectionEntry(BaseModel):
     """管养路段明细结构。"""
